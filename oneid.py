@@ -40,8 +40,15 @@ def draw_quickfill_button(attrs):
     
     return js
 
-def draw_provision_button():
-    pass
+def draw_provision_button(attrs):
+    js = "<div class='oneid_create_ctr'></div>"
+    js+= "<script type='text/javascript'>"
+    js+= "OneIdExtern.registerApiReadyFunction(function(){"
+    js+= "OneId.createOneIdButton('.oneid_create_ctr'," + json.dumps(attrs) +")"
+    js+= "})"
+    js+="</script>"
+
+    return js
 
 def do_redirect():
     pass
