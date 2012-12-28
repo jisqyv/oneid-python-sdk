@@ -1,39 +1,49 @@
 import urllib2
 import datetime
-import json
+import base64
+import simplejson as json
 
 
 class OneID:
-    oneid_server = ""
+    helper_server = ""
     oneid_script = ""
     oneid_form_script = ""
 
-    def __init__(self, server_flag):
-        self.oneid_server = "https://keychain%s.oneid.com" % server_flag
-        self.oneid_script = '<script src="https://api%s.oneid.com/js/includeexternal.js" type="text/javascript"></script>' % server_flag
+    def __init__(self, server_flag=""):
+        self.helper_server = "https://keychain%s.oneid.com" % server_flag
+        self.script_header = '<script src="https://api%s.oneid.com/js/includeexternal.js" type="text/javascript"></script>' % server_flag
         self.oneid_form_script = '<script src="https://api%s.oneid.com/form/form.js" type="text/javascript"></script>' % server_flag
 
 
-    def _call_OneID(self, method,data={}):
-        url = "%s/%s" % (oneid_server, method)
+    def _call_helper(self, method,data={}):
+        url = "%s/%s" % (self.helper_server, method)
+
+        #TODO: SSL certificate not verified by urllib2
 
         request = urllib2.Request(url)
-        api_id,api_key=""
 
-        base64string = base64.encodestring('%s:%s' % (api_id, api_key)).replace('\n', '')
+        base64string = base64.encodestring('%s:%s' % (self.api_id, self.api_key)).replace('\n', '')
         request.add_header("Authorization", "Basic %s" % base64string)
 
         response = urllib2.urlopen(request, json.dumps(data))
-        return json.loads(response)
+        return json.loads(response.readline())
 
-    def set_oneid_credentials(self):
-        pass
+    def set_credentials(self, api_id, api_key):
+        self.api_id = api_id
+        self.api_key = api_key
 
-    def make_nonce(self):
-        pass
+    def validate_response(self,line):
+        resp = json.loads(line)
+        valdata = dict([("nonces",resp["nonces"]),("attr_claim_tokens",resp["attr_claim_tokens"]),("uid",resp["uid"])])
+        validate = self._call_helper("validate",valdata)
+        if (not self.success(validate)):
+            validate["failed"] = "failed"
+            return validate
 
-    def parse_response(self):
-        pass
+        for x in validate:
+            resp[x] = validate[x]
+
+        return resp
 
     def draw_signin_button(self, callback_url, attrs="personal_info[email] personal_info[first_name] personal_info[last_name]"):
         params = json.dumps({
@@ -47,7 +57,7 @@ class OneID:
         js+= "})"
         js+="</script>"
 
-        return js
+        print js
 
     def draw_quickfill_button(self, attrs):
         js = "<span class='oneid_quickfill_ctr'></span>"
@@ -57,7 +67,7 @@ class OneID:
         js+= "})"
         js+="</script>"
 
-        return js
+        print js
 
     def draw_provision_button(self, attrs):
         js = "<div class='oneid_create_ctr'></div>"
@@ -67,10 +77,12 @@ class OneID:
         js+= "})"
         js+="</script>"
 
-        return js
+        print js
 
-    def do_redirect(self):
-        pass
+    def redirect(self, page, response):
+        return '{"error":"'+response['error']+'","errorcode":"'+str(response['errorcode'])+'\
+        ","url":"'+page+'","response":"'+json.dumps(response)+'"}'
 
-    def is_success(self):
-        pass
+    def success(self, response):
+        return response["errorcode"] == 0
+
