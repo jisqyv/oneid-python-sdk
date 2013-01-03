@@ -80,9 +80,9 @@ class OneID:
         print js
 
     def redirect(self, page, response):
-        return '{"error":"'+response['error']+'","errorcode":"'+str(response['errorcode'])+'\
-        ","url":"'+page+'","response":"'+json.dumps(response)+'"}'
-
+               return json.dumps({"error":response['error'],"errorcode":str(response['errorcode']),\
+                           "url":page})
+        
     def success(self, response):
         return response["errorcode"] == 0
 
