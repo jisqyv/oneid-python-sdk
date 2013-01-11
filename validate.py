@@ -19,14 +19,8 @@ line = sys.stdin.readline()
 
 resp = authn.validate_response(line)
 
-#Perhaps consider putting suffix in the redirect code?
-if authn.success(resp):
-    suffix = "?uid="+urllib.quote(resp["uid"])
-else:
-    suffix = ""
-
     #TODO: store the returned attributes, if any, in a temp file and put the name of the file
     #in the suffix
 
-print authn.redirect('account.py'+suffix,resp)
+print authn.redirect('account.py',resp)
 
