@@ -10,6 +10,7 @@ import base64
 import simplejson as json
 import pycurl
 import StringIO
+import os
 
 
 class OneID:
@@ -19,6 +20,7 @@ class OneID:
         self.helper_server = "https://keychain%s.oneid.com" % server_flag
         self.script_header = '<script src="https://api%s.oneid.com/js/includeexternal.js" type="text/javascript"></script>' % server_flag
         self.oneid_form_script = '<script src="https://api%s.oneid.com/form/form.js" type="text/javascript"></script>' % server_flag
+        self.creds_file = "api_key"+server_flag+".json"
 
 
     def _call_helper(self, method, data={}):
@@ -26,7 +28,7 @@ class OneID:
         url = "%s/%s" % (self.helper_server, method)
         base64creds = base64.encodestring('%s:%s' % (self.api_id, self.api_key)).replace('\n', '')
 
-        #TODO: SSL certificate not verified by urllib2
+        #NOTE: SSL certificates are not verified by urllib2
         #urllib2 version of request - doesn't verify SSL certificates so not recommended!
         #        request = urllib2.Request(url)
         #        request.add_header("Authorization", "Basic %s" % base64creds)
@@ -47,26 +49,35 @@ class OneID:
 
         return json.loads(response.getvalue())
 
-    def set_credentials(self, api_id, api_key):
+    def set_credentials(self, api_id="", api_key=""):
         """Set the credentials used for access to the OneID Helper Service"""
-        self.api_id = api_id
-        self.api_key = api_key
+        if api_id != "":
+            self.api_id = api_id
+            self.api_key = api_key
+        else:
+            f = open(self.creds_file,'r')
+            creds = json.loads(f.read())
+            f.close()
+            self.api_id = creds["API_ID"]
+            self.api_key = creds["API_KEY"]
 
-    def validate_response(self,line):
+    def validate(self,line):
         """Validate the data received by a callback"""
         resp = json.loads(line)
-        valdata = dict([("nonces",resp["nonces"]),("attr_claim_tokens",resp["attr_claim_tokens"]),("uid",resp["uid"])])
-        validate = self._call_helper("validate",valdata)
-        if (not self.success(validate)):
-            validate["failed"] = "failed"
-            return validate
+        valdata = dict([("nonces",resp["nonces"]),("uid",resp["uid"])])
+        if "attr_claim_tokens" in resp:
+            valdata["attr_claim_tokens"] = resp["attr_claim_tokens"]
+        valresp = self._call_helper("validate",valdata)
+        if (not self.success(valresp)):
+            valresp["failed"] = "failed"
+            return valresp
 
-        for x in validate:
-            resp[x] = validate[x]
+        for x in valresp:
+            resp[x] = valresp[x]
 
         return resp
 
-    def draw_signin_button(self, callback_url, attrs="personal_info[email] personal_info[first_name] personal_info[last_name]"):
+    def draw_signin_button(self, callback_url, attrs=""):
         """Create a OneID Sign In button on the web page"""
         params = json.dumps({
                 "challenge" : {"attr" : attrs, "callback" : callback_url}
@@ -79,7 +90,7 @@ class OneID:
         js+= "})"
         js+="</script>"
 
-        print js
+        return js
 
     def draw_quickfill_button(self, attrs):
         """Create a OneID QuickFill button on the web page"""
@@ -90,7 +101,7 @@ class OneID:
         js+= "})"
         js+="</script>"
 
-        print js
+        return js
 
     def draw_provision_button(self, attrs):
         """Create a provision button on the web page"""
@@ -101,12 +112,14 @@ class OneID:
         js+= "})"
         js+="</script>"
 
-        print js
+        return js
 
     def redirect(self, page, response):
         """Create the JSON string that instructs the AJAX code to redirect the browser to the account"""
         if self.success(response):
-            suffix = "?uid="+urllib.quote(response["uid"])+"&nonce="+urllib.quote(response["nonce"])
+            #Note that the "nonce" here is actually the b64 encoded JSON containing the nonce. But it's unique and good
+            #enough to uniquely identify the session for passing attributes.
+            suffix = "?uid="+urllib.quote(response["uid"])+"&nonce="+urllib.quote(self._getnonce(response))
         else:
             suffix = ""
 
@@ -114,5 +127,28 @@ class OneID:
                            "url":page + suffix})
         
     def success(self, response):
+        """Check errorcode in a response"""
         return response["errorcode"] == 0
 
+    def save_attributes(self, response):
+        """Save attributes in a temporary file for account page"""
+        noncefile = "/tmp/"+self._getnonce(response)
+        f = open(noncefile, "w")
+        f.write(json.dumps(response["attr"]))
+        f.close()
+
+    def get_attributes(self, nonce):
+        """Retrieve attributes saved by validation page"""
+        noncefile = "/tmp/"+nonce
+        f = open(noncefile, "r")
+        data = f.read()
+        f.close()
+        os.remove(noncefile)
+        return json.loads(data)
+
+    def _getnonce(self, response):
+        """Extract base64-encoded nonce from JWT in a response"""
+        return response["nonces"]["repo"]["nonce"].split('.')[1]
+
+    
+        

@@ -18,6 +18,6 @@ print authn.script_header
 
 print "Click on this button to sign in:"
 
-authn.draw_signin_button("validate.py")
+print authn.draw_signin_button("validate.py","personal_info[first_name] personal_info[last_name]")
 
 print "</body></html>"
