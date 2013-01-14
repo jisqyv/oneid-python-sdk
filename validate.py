@@ -3,7 +3,10 @@
 from oneid import OneID
 import sys
 import urllib
-import simplejson as json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 print """Content-Type: text/html
 """
@@ -15,10 +18,6 @@ authn.set_credentials()
 line = sys.stdin.readline()
 
 resp = authn.validate(line)
-
-f=open("/tmp/response","w")
-f.write(repr(resp))
-f.close()
 
 authn.save_attributes(resp)
 

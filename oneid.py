@@ -7,7 +7,10 @@ import urllib
 import urllib2
 import datetime
 import base64
-import simplejson as json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import pycurl
 import StringIO
 import os
@@ -26,20 +29,21 @@ class OneID:
     def _call_helper(self, method, data={}):
         """Call the OneID Helper Service. """
         url = "%s/%s" % (self.helper_server, method)
-        base64creds = base64.encodestring('%s:%s' % (self.api_id, self.api_key)).replace('\n', '')
+        creds = str('%s:%s' % (self.api_id, self.api_key))
 
         #NOTE: SSL certificates are not verified by urllib2
         #urllib2 version of request - doesn't verify SSL certificates so not recommended!
-        #        request = urllib2.Request(url)
-        #        request.add_header("Authorization", "Basic %s" % base64creds)
-        #        response = urllib2.urlopen(request, json.dumps(data))
-        #        return json.loads(response.readline())
+        # request = urllib2.Request(url)
+        # base64creds = base64.encodestring(creds.replace('\n', ''))
+        # request.add_header("Authorization", "Basic %s" % base64creds)
+        # response = urllib2.urlopen(request, json.dumps(data))
+        # return json.loads(response.readline())
 
         response = StringIO.StringIO()
         request = pycurl.Curl()
         request.setopt(pycurl.URL, url)
         request.setopt(pycurl.WRITEFUNCTION, response.write)
-        request.setopt(pycurl.USERPWD, '%s:%s' % (self.api_id,self.api_key))
+        request.setopt(pycurl.USERPWD, creds)
 
         if data != "":
             request.setopt(pycurl.POST, 1)
