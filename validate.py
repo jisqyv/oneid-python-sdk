@@ -19,7 +19,7 @@ line = sys.stdin.readline()
 
 resp = authn.validate(line)
 
-authn.save_attributes(resp)
+sessionid = authn.save_session(resp)
 
-print authn.redirect('account.py',resp)
+print authn.redirect('account.py', resp, sessionid)
 

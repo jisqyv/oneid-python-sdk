@@ -19,14 +19,14 @@ print """Content-Type: text/html
 
 
 form = cgi.FieldStorage()
-if "uid" not in form:
+if "sessionid" not in form:
    print "<H1>Error</H1>"
-   print "UID not found"
+   print "Authentication failure - sessionid not found"
 else:
    authn = OneID()
-   attr = authn.get_attributes(form["nonce"].value)
+   sess = authn.get_session(form["sessionid"].value)
    
-   print "<p>Welcome, UID=",form["uid"].value,"<br />"
-   print repr(attr)
+   print "<p>Welcome, UID=",sess["uid"],"<br />"
+   print repr(sess["attr"])
    print "</p></body></html>"
 

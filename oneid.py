@@ -14,6 +14,8 @@ except ImportError:
 import pycurl
 import StringIO
 import os
+import random
+
 
 
 class OneID:
@@ -24,6 +26,7 @@ class OneID:
         self.script_header = '<script src="https://api%s.oneid.com/js/includeexternal.js" type="text/javascript"></script>' % server_flag
         self.oneid_form_script = '<script src="https://api%s.oneid.com/form/form.js" type="text/javascript"></script>' % server_flag
         self.creds_file = "api_key"+server_flag+".json"
+        random.seed()
 
 
     def _call_helper(self, method, data={}):
@@ -118,12 +121,10 @@ class OneID:
 
         return js
 
-    def redirect(self, page, response):
+    def redirect(self, page, response, sessionid):
         """Create the JSON string that instructs the AJAX code to redirect the browser to the account"""
         if self.success(response):
-            #Note that the "nonce" here is actually the b64 encoded JSON containing the nonce. But it's unique and good
-            #enough to uniquely identify the session for passing attributes.
-            suffix = "?uid="+urllib.quote(response["uid"])+"&nonce="+urllib.quote(self._getnonce(response))
+            suffix = "?sessionid="+sessionid
         else:
             suffix = ""
 
@@ -134,20 +135,22 @@ class OneID:
         """Check errorcode in a response"""
         return response["errorcode"] == 0
 
-    def save_attributes(self, response):
-        """Save attributes in a temporary file for account page"""
-        noncefile = "/tmp/"+self._getnonce(response)
-        f = open(noncefile, "w")
-        f.write(json.dumps(response["attr"]))
+    def save_session(self, response):
+        """Save attributes and UID in a temporary file for account page"""
+        sessionid = str(random.getrandbits(128))
+        sessionfile = "/tmp/"+sessionid+".OneID"
+        f = open(sessionfile, "w")
+        f.write(json.dumps({"uid":response["uid"], "attr":response["attr"]}))
         f.close()
+        return sessionid;
 
-    def get_attributes(self, nonce):
-        """Retrieve attributes saved by validation page"""
-        noncefile = "/tmp/"+nonce
-        f = open(noncefile, "r")
+    def get_session(self, sessionid):
+        """Retrieve attributes and session ID saved by validation page"""
+        sessionfile = "/tmp/"+sessionid+".OneID"
+        f = open(sessionfile, "r")
         data = f.read()
         f.close()
-        os.remove(noncefile)
+        os.remove(sessionfile)
         return json.loads(data)
 
     def _getnonce(self, response):
