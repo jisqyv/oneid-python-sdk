@@ -11,7 +11,8 @@ try:
     import json
 except ImportError:
     import simplejson as json
-import pycurl
+
+import requests
 import StringIO
 import os
 import random
@@ -32,29 +33,8 @@ class OneID:
     def _call_helper(self, method, data={}):
         """Call the OneID Helper Service. """
         url = "%s/%s" % (self.helper_server, method)
-        creds = str('%s:%s' % (self.api_id, self.api_key))
-
-        #NOTE: SSL certificates are not verified by urllib2
-        #urllib2 version of request - doesn't verify SSL certificates so not recommended!
-        # request = urllib2.Request(url)
-        # base64creds = base64.encodestring(creds.replace('\n', ''))
-        # request.add_header("Authorization", "Basic %s" % base64creds)
-        # response = urllib2.urlopen(request, json.dumps(data))
-        # return json.loads(response.readline())
-
-        response = StringIO.StringIO()
-        request = pycurl.Curl()
-        request.setopt(pycurl.URL, url)
-        request.setopt(pycurl.WRITEFUNCTION, response.write)
-        request.setopt(pycurl.USERPWD, creds)
-
-        if data != "":
-            request.setopt(pycurl.POST, 1)
-            request.setopt(pycurl.POSTFIELDS, json.dumps(data))
-
-        request.perform()
-
-        return json.loads(response.getvalue())
+        r = requests.post(url, json.dumps(data), auth=(self.api_id, self.api_key), verify=False)
+        return r.json
 
     def set_credentials(self, api_id="", api_key=""):
         """Set the credentials used for access to the OneID Helper Service"""
