@@ -33,7 +33,7 @@ class OneID:
     def _call_helper(self, method, data={}):
         """Call the OneID Helper Service. """
         url = "%s/%s" % (self.helper_server, method)
-        r = requests.post(url, json.dumps(data), auth=(self.api_id, self.api_key), verify=False)
+        r = requests.post(url, json.dumps(data), auth=(self.api_id, self.api_key))
         return r.json
 
     def set_credentials(self, api_id="", api_key=""):
