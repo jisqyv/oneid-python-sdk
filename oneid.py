@@ -64,12 +64,15 @@ class OneID:
 
         return resp
 
-    def draw_signin_button(self, callback_url, attrs=""):
+    def draw_signin_button(self, callback_url, attrs="", http_post=False):
         """Create a OneID Sign In button on the web page"""
-        params = json.dumps({
-                "challenge" : {"attr" : attrs, "callback" : callback_url}
-            }
-        )
+        challenge = {"attr" : attrs,
+                     "callback" : callback_url}
+        if http_post:
+            challenge["request_method"] = "HTTP_POST"
+
+        params = json.dumps({"challenge" : challenge })
+
         js = "<span class='oneid_login_ctr'></span>"
         js+= "<script type='text/javascript'>"
         js+= "OneIdExtern.registerApiReadyFunction(function(){"
