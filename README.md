@@ -12,6 +12,11 @@ authentication information and attempst to validate it)
 * Account Page (receives a redirect from the Validation Page following
 validation)
 
+### Python Requirements
+
+* [Requests](http://docs.python-requests.org/en/latest/) v 1.1.0 or greater
+    * pip install requests
+
 ### `class OneID([server_flag])`
 
 Creating an instance of the OneID class takes a single optional
