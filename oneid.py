@@ -34,7 +34,7 @@ class OneID:
         """Call the OneID Helper Service. """
         url = "%s/%s" % (self.helper_server, method)
         r = requests.post(url, json.dumps(data), auth=(self.api_id, self.api_key))
-        return r.json
+        return r.json()
 
     def set_credentials(self, api_id="", api_key=""):
         """Set the credentials used for access to the OneID Helper Service"""
@@ -50,7 +50,10 @@ class OneID:
 
     def validate(self,line):
         """Validate the data received by a callback"""
-        resp = json.loads(line)
+        if isinstance(line, object):
+            resp = line
+        else:
+            resp = json.loads(line)
         valdata = dict([("nonces",resp["nonces"]),("uid",resp["uid"])])
         if "attr_claim_tokens" in resp:
             valdata["attr_claim_tokens"] = resp["attr_claim_tokens"]
