@@ -32,7 +32,7 @@ The OneID class provides the following methods:
 
 Sets the credentials required by the OneID Helper Service.  The
 Helper Service is used by the `validate()` method to check
-The signatures provided in the authentication as well as
+the signatures provided in the authentication as well as
 signatures on any requested attributes that are signed by
 OneID. To use the Helper Service, you will need to obtain an API
 Key from https://keychain.oneid.com/register and provide them via
@@ -56,16 +56,21 @@ numeric error code "error": textual error message
 If successful, `validate()` returns a dictionary with the following values:
 (fill in the format here)
 
-#### `draw_signin_button(callback_url[, attrs])`
+#### `draw_signin_button(callback_url[, attrs][, http_post])`
 
 Generates and prints JavaScript that instantiates a OneID Sign In
-button on the page. This method takes two parameters, the callback
-URL (address of the Validation Page) and an optional
-space-delimited list of optional attributes to be provided as part
-of the authentication.  If no attr parameter is specified, no
-attributes are supplied. This method is used on the Reference Page.
-The JavaScript this method generates can alternatively be directly
-embedded in an HTML web page.
+button on the page. This method takes two parameters, the callback URL
+(address of the Validation Page) and an optional space-delimited list
+of optional attributes to be provided as part of the authentication.
+If no attr parameter is specified, no attributes are supplied. The
+http_post parameter should be True if the callback (Validation) page
+should directly function as the account page rather than output JSON
+causing the browser to redirect to the account page via an AJAX
+request (AJAX is the default).
+
+This method is used on the Reference Page.  Instead of calling this
+method, the JavaScript it generates can be directly embedded in an
+HTML web page.
 
 #### `draw_quickfill_button(callback_url, attrs)`
 
@@ -81,9 +86,10 @@ This method is used on the Reference Page.
 
 Generates and prints JavaScript that instantiates a OneID QuickFill
 button on the page.  This method takes two parameters, the callback
-URL (address of the Validation Page) and a string containing a
-space delimited list of user attributes **TBD**. This method is
-used on the Reference Page.
+URL (address of the Validation Page) and a string containing a space
+delimited list of user attributes as described on the User Attributes
+page at https://developer.oneid.com . This method is used on the
+Reference Page.
 
 #### `redirect(page, response, sessionid)`
 
